@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-groups --python ${{ matrix.python-version }}
+
+      # The suite is offline by design: every assertion runs against published
+      # BIP vectors or scripted fakes, so CI never depends on a public API.
+      - name: Run tests
+        run: uv run --python ${{ matrix.python-version }} pytest -v --cov --cov-report=term-missing
+
+  lint:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Ruff
+        run: uv run ruff check --output-format=github .
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Mypy
+        run: uv run mypy src/
+
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        run: uv build
+
+      - name: Verify the server starts and registers its tools
+        run: |
+          uv run python -c "
+          from mcp_bitcoin.server import mcp
+          tools = mcp._tool_manager._tools
+          assert len(tools) == 27, f'expected 27 tools, found {len(tools)}'
+          banned = {'sign_transaction', 'broadcast_transaction',
+                    'create_transaction', 'create_transaction_from_address'}
+          assert not banned & set(tools), 'a money-moving tool was reintroduced'
+          print(f'OK: {len(tools)} tools registered')
+          "

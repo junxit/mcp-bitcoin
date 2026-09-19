@@ -1,0 +1,54 @@
+mcp-bitcoin changelog
+=====================
+
+Format: Keep a Changelog (https://keepachangelog.com/en/1.1.0/)
+Versioning: Semantic Versioning (https://semver.org/spec/v2.0.0.html)
+
+While the major version is 0, the public tool surface may change in any
+minor release.
+
+
+[0.1.0] - 2026-09-19
+--------------------
+
+First public release. Read-only by design: this server can derive addresses
+and read the chain, but it cannot build, sign or broadcast transactions.
+
+Added
+  - 27 MCP tools across derivation, chain queries, fees and mempool analysis.
+  - HD wallet derivation: BIP-32, BIP-39, BIP-44, BIP-49, BIP-84, BIP-86 and
+    BIP-85, verified against the published specification test vectors.
+  - Watch-only operation from an xpub/ypub/zpub, with no seed phrase required.
+  - Four interchangeable backends with priority failover: Bitcoin Core,
+    Electrum (ElectrumX/Fulcrum), mempool.space and Esplora.
+  - Mainnet, testnet, signet and regtest support.
+  - Optional Tor routing, enforced fail-closed: when a SOCKS5 proxy is
+    configured, the server refuses to start if it is unreachable.
+  - Bitcoin Core cookie authentication, so a stock bitcoind works without
+    hand-configuring rpcauth.
+  - Cursor-based pagination for address history.
+  - PSBT inspection showing destination addresses, fee, and warnings for
+    excessive fees or unverifiable amounts.
+
+Security
+  - Watch-only by default. Tools that accept a seed phrase or private key
+    refuse to run unless MCP_BITCOIN_ALLOW_MNEMONIC=true is set explicitly.
+    Rationale: anything passed to a tool travels through the model's context
+    and, on a hosted client, a cloud API and saved chat history.
+  - Private keys are never returned in tool output. decode_wif and
+    derive_from_path report public keys and addresses only.
+  - Addresses are validated against the configured network before any query,
+    so a mainnet address can no longer be looked up against testnet.
+  - Electrum TLS certificates are verified by default. Verification can be
+    disabled explicitly for self-signed servers, and is skipped for .onion
+    hosts, where the address itself authenticates the endpoint.
+  - Log sanitization covers mainnet and testnet WIF keys, extended private
+    keys, mnemonics and URL credentials, while leaving txids and block hashes
+    readable.
+
+Not included in this release
+  - Transaction construction, signing and broadcasting. The v0.1 development
+    code for these was found to be non-functional against embit 0.8 and has
+    been removed rather than shipped. See ROADMAP.md for the PSBT-based
+    design that replaces it.
+  - MCP resources, multisig derivation (BIP-45/48) and TOML configuration.
