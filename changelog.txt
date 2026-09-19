@@ -46,6 +46,9 @@ Security
     keys, mnemonics and URL credentials, while leaving txids and block hashes
     readable.
 
+Maintenance
+  - CI runs pytest, ruff and mypy on Python 3.11, 3.12 and 3.13.
+
 Not included in this release
   - Transaction construction, signing and broadcasting. The v0.1 development
     code for these was found to be non-functional against embit 0.8 and has
