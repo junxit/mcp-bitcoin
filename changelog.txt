@@ -8,6 +8,22 @@ While the major version is 0, the public tool surface may change in any
 minor release.
 
 
+[Unreleased]
+------------
+
+### Security
+
+- aiohttp 3.14.3 -> 3.14.5 closes all 8 of its advisories, the three high
+  ones being unbounded memory/CPU use, a missing initial request/header
+  timeout, and file-descriptor exhaustion in multipart requests
+  (GHSA-9xw5-w5jj-pvcg). This server makes outbound HTTP calls to
+  blockchain APIs, so a hostile or merely broken endpoint is a reachable
+  condition; pyproject.toml now requires aiohttp>=3.14.4.
+- PyJWT 2.14.0 -> 2.15.1, multidict 6.9.0 -> 7.2.1 and
+  opentelemetry-api 1.44.0 -> 1.45.1, all transitive and held by uv.lock.
+- Verified: 343 tests pass.
+
+
 [0.1.0] - 2026-09-19
 --------------------
 
